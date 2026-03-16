@@ -1,9 +1,20 @@
+"""
+====================================================================================
+🏆 ULTRA-AI COLOR PREDICTOR (10-CORE 4-CLASS ARCHITECTURE) 🏆
+====================================================================================
+Developer: Master AI System
+Target: 6win566 Win Go (Color: RED, GREEN, RED_VIOLET, GREEN_VIOLET)
+Architecture: Modular Object-Oriented Programming (OOP)
+====================================================================================
+"""
+
 import asyncio
 import time
 import os
 import logging
 from collections import Counter
 from datetime import datetime
+from typing import List, Tuple, Dict, Any, Optional
 from dotenv import load_dotenv
 
 import aiohttp
@@ -13,363 +24,395 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-# --- 🧠 ENTERPRISE MACHINE LEARNING LIBRARIES ---
+# --- 🧠 ULTRA AI & DATA SCIENCE LIBRARIES ---
 import numpy as np
+import scipy.stats as stats
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import StandardScaler
-import xgboost as xgb
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
 import warnings
 warnings.filterwarnings("ignore")
 
-# ==========================================
-# ⚙️ MODULE 1: CONFIGURATION & GLOBALS
-# ==========================================
+# =========================================================================
+# ⚙️ MODULE 1: SYSTEM CONFIGURATION
+# =========================================================================
 load_dotenv()
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("ProPredictor-TRX")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger("COLOR-AI-V2")
 
 class Config:
-    BOT_TOKEN = os.getenv("BOT_TOKEN")
-    CHANNEL_ID = os.getenv("CHANNEL_ID")
-    MONGO_URI = os.getenv("MONGO_URI")
+    BOT_TOKEN: str = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
+    CHANNEL_ID: str = os.getenv("CHANNEL_ID", "YOUR_CHANNEL_ID")
+    MONGO_URI: str = os.getenv("MONGO_URI", "YOUR_MONGO_URI")
     
-    WIN_STICKER = "CAACAgUAAxkBAAEQwtVpt1_oWxyaQFmiy3O_1knZjN9yCwAC2hIAAikFkVX0qhu40v6REDoE"  
-    LOSE_STICKER = "" 
+    MULTIPLIERS: List[int] = [1, 2, 3, 5, 8, 15, 30, 50, 100]
+    API_URL: str = 'https://6lotteryapi.com/api/webapi/GetNoaverageEmerdList'
     
-    MULTIPLIERS = [1, 2, 3, 5, 8, 15, 30, 50]
-    
-    # 💡 [TRX] API လမ်းကြောင်း ပြောင်းလဲထားပါသည်
-    API_URL = 'https://6lotteryapi.com/api/webapi/GetTRXNoaverageEmerdList'
-    HEADERS = {
-        'authority': '6lotteryapi.com', 
-        'accept': 'application/json, text/plain, */*',
-        'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzczNjI4NjM0IiwibmJmIjoiMTc3MzYyODYzNCIsImV4cCI6IjE3NzM2MzA0MzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIzLzE2LzIwMjYgOTozNzoxNCBBTSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFjY2Vzc19Ub2tlbiIsIlVzZXJJZCI6IjEwNzY1OTQiLCJVc2VyTmFtZSI6Ijk1OTY3NTMyMzg3OCIsIlVzZXJQaG90byI6IjciLCJOaWNrTmFtZSI6IuGAleGAvOGAiuGAt-GAuuGAheGAr-GAtiIsIkFtb3VudCI6Ijk1LjU1IiwiSW50ZWdyYWwiOiIwIiwiTG9naW5NYXJrIjoiSDUiLCJMb2dpblRpbWUiOiIzLzE2LzIwMjYgOTowNzoxNCBBTSIsIkxvZ2luSVBBZGRyZXNzIjoiMTAzLjEzNC4yMDcuMTUyIiwiRGJOdW1iZXIiOiIwIiwiSXN2YWxpZGF0b3IiOiIwIiwiS2V5Q29kZSI6IjEwNSIsIlRva2VuVHlwZSI6IkFjY2Vzc19Ub2tlbiIsIlBob25lVHlwZSI6IjEiLCJVc2VyVHlwZSI6IjAiLCJVc2VyTmFtZTIiOiIiLCJpc3MiOiJqd3RJc3N1ZXIiLCJhdWQiOiJsb3R0ZXJ5VGlja2V0In0.JklJvg5QR5qShkhygmhz4BC5X7VFIBY9UShEBv_Pwbc',
-        'content-type': 'application/json;charset=UTF-8', 
-        'origin': 'https://www.6win566.com',
-        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
-    }
+    @staticmethod
+    def get_headers() -> Dict[str, str]:
+        """ API Request အတွက် Headers များကို ထုတ်ပေးသည် """
+        return {
+            'authority': '6lotteryapi.com', 
+            'accept': 'application/json, text/plain, */*',
+            # 💡 သတိပြုရန်: ဤနေရာတွင် Token အသစ်ကို အစားထိုးပါ
+            'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzczNjMxOTU4IiwibmJmIjoiMTc3MzYzMTk1OCIsImV4cCI6IjE3NzM2MzM3NTgiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL2V4cGlyYXRpb24iOiIzLzE2LzIwMjYgMTA6MzI6MzggQU0iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBY2Nlc3NfVG9rZW4iLCJVc2VySWQiOiIxMDc2NTk0IiwiVXNlck5hbWUiOiI5NTk2NzUzMjM4NzgiLCJVc2VyUGhvdG8iOiI3IiwiTmlja05hbWUiOiLhgJXhgLzhgIrhgLfhgLrhgIXhgK_hgLYiLCJBbW91bnQiOiI5NS41NSIsIkludGVncmFsIjoiMCIsIkxvZ2luTWFyayI6Ikg1IiwiTG9naW5UaW1lIjoiMy8xNi8yMDI2IDEwOjAyOjM4IEFNIiwiTG9naW5JUEFkZHJlc3MiOiIxMDMuMTM0LjIwNy4xNTIiLCJEYk51bWJlciI6IjAiLCJJc3ZhbGlkYXRvciI6IjAiLCJLZXlDb2RlIjoiMTA2IiwiVG9rZW5UeXBlIjoiQWNjZXNzX1Rva2VuIiwiUGhvbmVUeXBlIjoiMSIsIlVzZXJUeXBlIjoiMCIsIlVzZXJOYW1lMiI6IiIsImlzcyI6Imp3dElzc3VlciIsImF1ZCI6ImxvdHRlcnlUaWNrZXQifQ.ODo3Y-5b0iaBUF8O05E1eOsxWj8WpKgIqETu0LeEWR8',
+            'content-type': 'application/json;charset=UTF-8', 
+            'origin': 'https://www.6win566.com',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
 
 bot = Bot(token=Config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-# ==========================================
+# =========================================================================
 # 🗄️ MODULE 2: DATABASE MANAGER
-# ==========================================
+# =========================================================================
 class DatabaseManager:
     def __init__(self, uri: str):
         self.client = motor.motor_asyncio.AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
-        # 💡 [TRX] ရိုးရိုး WinGo နှင့် Data မရောစေရန် Database အမည် ပြောင်းထားသည်
-        self.db = self.client['sixlottery_trx_professional']
+        self.db = self.client['sixlottery_color_ultra_v2'] 
         self.history = self.db['game_history']
         self.predictions = self.db['predictions']
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         try:
             await self.history.create_index("issue_number", unique=True)
             await self.predictions.create_index("issue_number", unique=True)
-            logger.info("✅ TRX Database Initialized Successfully.")
-        except Exception as e:
-            logger.error(f"❌ Database Error: {e}")
+            logger.info("✅ Database V2 Initialized Successfully.")
+        except Exception as e: logger.error(f"❌ DB Error: {e}")
 
-    async def save_history(self, issue: str, number: int, size: str, parity: str):
-        await self.history.update_one(
-            {"issue_number": issue}, 
-            {"$setOnInsert": {"number": number, "size": size, "parity": parity, "timestamp": datetime.now()}}, 
-            upsert=True
-        )
+    async def save_history(self, issue: str, number: int, color: str) -> None:
+        try:
+            doc = {"number": int(number), "color": str(color), "timestamp": datetime.now()}
+            await self.history.update_one({"issue_number": issue}, {"$setOnInsert": doc}, upsert=True)
+        except Exception: pass
 
-    async def save_prediction(self, issue: str, pred_size: str, confidence: float, details: dict):
-        await self.predictions.update_one(
-            {"issue_number": issue},
-            {"$set": {"predicted_size": pred_size, "confidence": confidence, "model_votes": details, "timestamp": datetime.now()}},
-            upsert=True
-        )
+    async def save_prediction(self, issue: str, pred_color: str, confidence: float, details: Dict[str, Dict[str, float]]) -> None:
+        try:
+            doc = {"predicted_color": str(pred_color), "confidence": float(confidence), "model_votes": details, "timestamp": datetime.now()}
+            await self.predictions.update_one({"issue_number": issue}, {"$set": doc}, upsert=True)
+        except Exception: pass
 
-    async def update_result(self, issue: str, actual_size: str, actual_number: int, win_lose: str):
-        await self.predictions.update_one(
-            {"issue_number": issue},
-            {"$set": {"actual_size": actual_size, "actual_number": actual_number, "win_lose": win_lose}}
-        )
+    async def update_result(self, issue: str, actual_color: str, actual_number: int, win_lose: str) -> None:
+        try:
+            doc = {"actual_color": str(actual_color), "actual_number": int(actual_number), "win_lose": str(win_lose)}
+            await self.predictions.update_one({"issue_number": issue}, {"$set": doc})
+        except Exception: pass
 
-    async def get_history(self, limit: int = 500) -> list:
+    async def get_history(self, limit: int = 500) -> List[Dict[str, Any]]:
         return await self.history.find().sort("issue_number", -1).limit(limit).to_list(length=limit)
 
-    async def get_recent_predictions(self, limit: int = 10) -> list:
+    async def get_recent_predictions(self, limit: int = 10) -> List[Dict[str, Any]]:
         return await self.predictions.find({"win_lose": {"$ne": None}}).sort("issue_number", -1).limit(limit).to_list(length=limit)
 
-# ==========================================
-# 🔬 MODULE 3: FEATURE ENGINEERING
-# ==========================================
+# =========================================================================
+# 🔬 MODULE 3: 4-CLASS FEATURE ENGINEERING
+# =========================================================================
+# 💡 [NEW] Class ၄ မျိုး သတ်မှတ်ချက် (0: Red, 1: Green, 2: Red-Violet, 3: Green-Violet)
+COLOR_MAP = {'RED': 0, 'GREEN': 1, 'RED_VIOLET': 2, 'GREEN_VIOLET': 3}
+STATES = ['RED', 'GREEN', 'RED_VIOLET', 'GREEN_VIOLET']
+
+def get_color_from_number(num: int) -> str:
+    if num == 0: return 'RED_VIOLET'
+    if num == 5: return 'GREEN_VIOLET'
+    if num in [2, 4, 6, 8]: return 'RED'
+    if num in [1, 3, 7, 9]: return 'GREEN'
+    return 'RED' 
+
+def get_color_emoji(color: str) -> str:
+    if color == 'RED': return "🔴"
+    if color == 'GREEN': return "🟢"
+    if color == 'RED_VIOLET': return "🔴🟣"
+    if color == 'GREEN_VIOLET': return "🟢🟣"
+    return "⚪"
+
 class FeatureEngineer:
-    def __init__(self, window_size=5):
+    def __init__(self, window_size: int = 6):
         self.window = window_size
         self.scaler = StandardScaler()
 
-    def prepare_data(self, sizes: list, numbers: list, parities: list):
-        if len(sizes) < self.window * 4:
-            return None, None, None
+    def extract_features(self, colors: List[str], numbers: List[int]) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+        if len(colors) < self.window * 4: return None, None, None
             
         X, y = [], []
-        for i in range(len(sizes) - self.window):
+        for i in range(len(colors) - self.window):
             row = []
-            for j in range(self.window): 
-                size_val = 1 if sizes[i+j] == 'BIG' else 0
-                par_val = 1 if parities[i+j] == 'EVEN' else 0
-                num_val = numbers[i+j]
-                row.extend([size_val, par_val, num_val])
+            for j in range(self.window):
+                row.extend([float(COLOR_MAP.get(colors[i+j], 0)), float(numbers[i+j])])
             X.append(row)
-            y.append(1 if sizes[i+self.window] == 'BIG' else 0)
+            y.append(COLOR_MAP.get(colors[i+self.window], 0))
             
         curr_feats = []
-        for j in range(1, self.window + 1): 
-            size_val = 1 if sizes[-j] == 'BIG' else 0
-            par_val = 1 if parities[-j] == 'EVEN' else 0
-            num_val = numbers[-j]
-            curr_feats.extend([size_val, par_val, num_val])
+        for j in range(1, self.window + 1):
+            curr_feats.extend([float(COLOR_MAP.get(colors[-j], 0)), float(numbers[-j])])
             
-        X_scaled = self.scaler.fit_transform(X)
-        curr_scaled = self.scaler.transform([curr_feats])
-        
-        return X_scaled, y, curr_scaled
+        return self.scaler.fit_transform(X), np.array(y), self.scaler.transform([curr_feats])
 
-# ==========================================
-# 🧠 MODULE 4: THE 6-CORE PREDICTOR MODELS
-# ==========================================
-class PatternEngine:
-    @staticmethod
-    def predict(sizes: list, n: int = 3) -> float:
-        if len(sizes) < n + 1: return 0.5
-        current_pattern = tuple(sizes[-n:])
-        matches = {'BIG': 0, 'SMALL': 0}
-        for i in range(len(sizes) - n):
-            if tuple(sizes[i:i+n]) == current_pattern:
-                matches[sizes[i+n]] += 1
-        total = sum(matches.values())
-        if total == 0: return 0.5
-        return matches['BIG'] / total
+# =========================================================================
+# 🧠 MODULE 4: THE 10 AI CORES (4 CLASSES)
+# =========================================================================
 
-class MarkovChain:
-    @staticmethod
-    def predict(sizes: list) -> float:
-        if len(sizes) < 2: return 0.5
-        transitions = {'BIG': {'BIG': 0, 'SMALL': 0}, 'SMALL': {'BIG': 0, 'SMALL': 0}}
-        for i in range(len(sizes)-1): 
-            transitions[sizes[i]][sizes[i+1]] += 1
-        curr = sizes[-1]
-        tot = transitions[curr]['BIG'] + transitions[curr]['SMALL']
-        if tot == 0: return 0.5
-        return transitions[curr]['BIG'] / tot
+def ensure_probs(probs_dict: Dict[int, float]) -> Dict[str, float]:
+    return {
+        'RED': float(probs_dict.get(0, 0.0)),
+        'GREEN': float(probs_dict.get(1, 0.0)),
+        'RED_VIOLET': float(probs_dict.get(2, 0.0)),
+        'GREEN_VIOLET': float(probs_dict.get(3, 0.0))
+    }
 
-class MachineLearningCore:
+def get_base_probs() -> Dict[str, float]:
+    return {'RED': 0.4, 'GREEN': 0.4, 'RED_VIOLET': 0.1, 'GREEN_VIOLET': 0.1}
+
+class TreeEngines:
     def __init__(self):
         self.rf = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42, n_jobs=-1)
-        self.gb = GradientBoostingClassifier(n_estimators=100, learning_rate=0.05, max_depth=3, random_state=42)
-        self.xgb = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=3, eval_metric='logloss', random_state=42)
-        self.lr = LogisticRegression(max_iter=500, random_state=42)
-
-    def train_and_predict(self, X, y, curr_X) -> dict:
-        results = {'rf': 0.5, 'gb': 0.5, 'xgb': 0.5, 'lr': 0.5}
+        self.gb = GradientBoostingClassifier(n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42)
+        
+    def predict(self, X: np.ndarray, y: np.ndarray, curr_X: np.ndarray) -> Tuple[Dict[str, float], Dict[str, float]]:
         try:
-            self.rf.fit(X, y)
-            if 1 in self.rf.classes_:
-                results['rf'] = self.rf.predict_proba(curr_X)[0][list(self.rf.classes_).index(1)]
-                
-            self.gb.fit(X, y)
-            if 1 in self.gb.classes_:
-                results['gb'] = self.gb.predict_proba(curr_X)[0][list(self.gb.classes_).index(1)]
-                
-            self.xgb.fit(np.array(X), np.array(y))
-            if 1 in self.xgb.classes_:
-                results['xgb'] = self.xgb.predict_proba(curr_X)[0][list(self.xgb.classes_).index(1)]
-                
-            self.lr.fit(X, y)
-            if 1 in self.lr.classes_:
-                results['lr'] = self.lr.predict_proba(curr_X)[0][list(self.lr.classes_).index(1)]
-                
-        except Exception as e:
-            pass
-            
-        return results
+            self.rf.fit(X, y); self.gb.fit(X, y)
+            rf_res = {cls: prob for cls, prob in zip(self.rf.classes_, self.rf.predict_proba(curr_X)[0])}
+            gb_res = {cls: prob for cls, prob in zip(self.gb.classes_, self.gb.predict_proba(curr_X)[0])}
+            return ensure_probs(rf_res), ensure_probs(gb_res)
+        except: return get_base_probs(), get_base_probs()
 
-# ==========================================
-# ⚙️ MODULE 5: META OPTIMIZER & ENSEMBLE
-# ==========================================
+class MarkovEngine:
+    @staticmethod
+    def predict(colors: List[str]) -> Dict[str, float]:
+        if len(colors) < 10: return get_base_probs()
+        trans = {c: {s: 0 for s in STATES} for c in STATES}
+        for i in range(len(colors)-1): trans[colors[i]][colors[i+1]] += 1
+        curr = colors[-1]
+        tot = sum(trans[curr].values())
+        if tot == 0: return get_base_probs()
+        return {s: float(trans[curr][s]/tot) for s in STATES}
+
+class CountBasedEngine: # For NGram & MonteCarlo
+    @staticmethod
+    def calc_probs(matches: List[str]) -> Dict[str, float]:
+        if not matches: return get_base_probs()
+        tot = len(matches)
+        return {s: float(matches.count(s)/tot) for s in STATES}
+
+class NGramEngine:
+    @staticmethod
+    def predict(colors: List[str], n: int = 4) -> Dict[str, float]:
+        if len(colors) < n+1: return get_base_probs()
+        pat = tuple(colors[-n:])
+        matches = [colors[i+n] for i in range(len(colors)-n) if tuple(colors[i:i+n]) == pat]
+        return CountBasedEngine.calc_probs(matches)
+
+class MonteCarloEngine:
+    @staticmethod
+    def predict(colors: List[str]) -> Dict[str, float]:
+        return CountBasedEngine.calc_probs(colors)
+
+class BayesianEngine:
+    def __init__(self): self.nb = GaussianNB()
+    def predict(self, X: np.ndarray, y: np.ndarray, curr_X: np.ndarray) -> Dict[str, float]:
+        try:
+            self.nb.fit(X, y)
+            res = {cls: prob for cls, prob in zip(self.nb.classes_, self.nb.predict_proba(curr_X)[0])}
+            return ensure_probs(res)
+        except: return get_base_probs()
+
+class SimpleLSTM(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=16, batch_first=True)
+        # 💡 [NEW] Output Layer 4 ခုသို့ ပြောင်းထားသည်
+        self.fc = nn.Linear(16, 4) 
+        
+    def forward(self, x):
+        _, (hn, _) = self.lstm(x)
+        return self.fc(hn[-1])
+
+class LSTMEngine:
+    def predict(self, colors: List[str]) -> Dict[str, float]:
+        if len(colors) < 50: return get_base_probs()
+        try:
+            data = [float(COLOR_MAP[c]) for c in colors[-50:]]
+            X_t = torch.tensor(data[:-1], dtype=torch.float32).view(1, -1, 1)
+            y_t = torch.tensor([data[-1]], dtype=torch.long)
+            
+            model = SimpleLSTM()
+            optimizer = optim.Adam(model.parameters(), lr=0.01)
+            criterion = nn.CrossEntropyLoss()
+            
+            model.train()
+            for _ in range(5):
+                optimizer.zero_grad()
+                loss = criterion(model(X_t), y_t)
+                loss.backward()
+                optimizer.step()
+            
+            model.eval()
+            curr_X = torch.tensor(data[1:], dtype=torch.float32).view(1, -1, 1)
+            with torch.no_grad(): 
+                logits = model(curr_X)
+                probs = torch.softmax(logits, dim=1).squeeze().tolist()
+            return {'RED': float(probs[0]), 'GREEN': float(probs[1]), 'RED_VIOLET': float(probs[2]), 'GREEN_VIOLET': float(probs[3])}
+        except Exception: 
+            return get_base_probs()
+
 class MetaOptimizer:
     def __init__(self):
-        self.weights = {
-            'rf': 0.20, 'gb': 0.20, 'xgb': 0.20, 
-            'lr': 0.10, 'markov': 0.15, 'pattern': 0.15
-        }
+        self.weights = {'rf': 0.15, 'gb': 0.15, 'markov': 0.15, 'ngram': 0.15, 'monte': 0.10, 'bayes': 0.10, 'lstm': 0.20}
 
-    def learn_from_result(self, actual: str, past_model_preds: dict):
-        if not past_model_preds: return
-
-        total_w = 0.0
-        actual_val = 1.0 if actual == 'BIG' else 0.0
-        
-        for model, prob_big in past_model_preds.items():
-            error = abs(actual_val - prob_big)
-            if error < 0.5:
-                self.weights[model] += 0.05
-            else:
-                self.weights[model] = max(0.01, self.weights[model] - 0.03)
+    def update(self, actual_color: str, past_preds: Dict[str, Dict[str, float]]) -> None:
+        if not past_preds: return
+        try:
+            total_w = 0.0
+            for model, probs in past_preds.items():
+                predicted_prob = probs.get(actual_color, 0.0)
+                error = 1.0 - predicted_prob
+                if error < 0.6: self.weights[model] += 0.05
+                else: self.weights[model] = max(0.01, self.weights[model] - 0.02)
+                total_w += self.weights[model]
                 
-            total_w += self.weights[model]
-            
-        if total_w > 0:
-            for k in self.weights:
-                self.weights[k] /= total_w
+            if total_w > 0:
+                for k in self.weights: self.weights[k] = float(self.weights[k] / total_w)
+        except Exception: pass
 
-class UltimateAIEngine:
+# =========================================================================
+# ⚙️ MODULE 5: MASTER ORCHESTRATOR
+# =========================================================================
+class UltraMasterEngine:
     def __init__(self):
-        self.fe = FeatureEngineer(window_size=6)
-        self.ml_core = MachineLearningCore()
-        self.optimizer = MetaOptimizer()
-        self.last_model_probs = {} 
+        self.fe = FeatureEngineer()
+        self.opt = MetaOptimizer()
+        self.trees = TreeEngines()
+        self.bayes = BayesianEngine()
+        self.lstm = LSTMEngine()
+        self.last_probs: Dict[str, Dict[str, float]] = {}
 
-    def analyze_and_predict(self, docs: list) -> tuple:
-        if len(docs) < 40: 
-            return "BIG", 55.0, {}
-        
-        sizes = [d.get('size', 'BIG') for d in reversed(docs)]
-        numbers = [int(d.get('number', 0)) for d in reversed(docs)]
-        parities = [d.get('parity', 'EVEN') for d in reversed(docs)]
-        
-        prob_b_pat = PatternEngine.predict(sizes, n=3)
-        prob_b_mar = MarkovChain.predict(sizes)
-        
-        X, y, curr_X = self.fe.prepare_data(sizes, numbers, parities)
-        if X is not None:
-            ml_probs = self.ml_core.train_and_predict(X, y, curr_X)
-        else:
-            ml_probs = {'rf': 0.5, 'gb': 0.5, 'xgb': 0.5, 'lr': 0.5}
+    def analyze(self, docs: List[Dict[str, Any]]) -> Tuple[str, float, Dict[str, Dict[str, float]]]:
+        if len(docs) < 50: return "RED", 50.0, {}
+        try:
+            colors = [d.get('color', 'RED') for d in reversed(docs)]
+            nums = [int(d.get('number', 0)) for d in reversed(docs)]
             
-        self.last_model_probs = {
-            'pattern': prob_b_pat, 'markov': prob_b_mar,
-            'rf': ml_probs['rf'], 'gb': ml_probs['gb'], 
-            'xgb': ml_probs['xgb'], 'lr': ml_probs['lr']
-        }
-        
-        w = self.optimizer.weights
-        final_b_score = (
-            (self.last_model_probs['pattern'] * w['pattern']) +
-            (self.last_model_probs['markov'] * w['markov']) +
-            (self.last_model_probs['rf'] * w['rf']) +
-            (self.last_model_probs['gb'] * w['gb']) +
-            (self.last_model_probs['xgb'] * w['xgb']) +
-            (self.last_model_probs['lr'] * w['lr'])
-        )
-        
-        final_pred = "BIG" if final_b_score > 0.5 else "SMALL"
-        
-        raw_conf = final_b_score if final_b_score > 0.5 else (1.0 - final_b_score)
-        confidence = min(max(raw_conf * 100, 51.0), 99.0)
-        
-        return final_pred, round(confidence, 1), self.last_model_probs
+            X, y, curr_X = self.fe.extract_features(colors, nums)
+            
+            probs = {}
+            probs['markov'] = MarkovEngine.predict(colors)
+            probs['ngram'] = NGramEngine.predict(colors)
+            probs['monte'] = MonteCarloEngine.predict(colors)
+            probs['lstm'] = self.lstm.predict(colors)
+            
+            if X is not None and len(X) > 10:
+                probs['rf'], probs['gb'] = self.trees.predict(X, y, curr_X)
+                probs['bayes'] = self.bayes.predict(X, y, curr_X)
+            else:
+                probs['rf'] = probs['gb'] = probs['bayes'] = get_base_probs()
+                
+            self.last_probs = probs
+            
+            final_probs = {s: 0.0 for s in STATES}
+            w = self.opt.weights
+            for model_name, p_dict in probs.items():
+                weight = w.get(model_name, 0.1)
+                for c in final_probs: final_probs[c] += p_dict.get(c, 0.0) * weight
+                
+            final_pred = max(final_probs, key=final_probs.get)
+            conf = min(max(float(final_probs[final_pred]) * 100, 25.0), 99.0) 
+            
+            return final_pred, round(conf, 1), self.last_probs
+            
+        except Exception as e:
+            logger.error(f"Master Engine Error: {e}")
+            return "RED", 50.0, {}
 
-# ==========================================
-# 💰 MODULE 6: UI & BOT MANAGER
-# ==========================================
-class TelegramUI:
-    def __init__(self, bot_instance: Bot):
-        self.bot = bot_instance
+# =========================================================================
+# 💰 MODULE 6: TELEGRAM UI & PRESENTATION
+# =========================================================================
+class UIManager:
+    def __init__(self, bot_client: Bot):
+        self.bot = bot_client
 
-    async def send_prediction(self, issue: str, pred: str, step: int, conf: float, top_model: str):
+    async def broadcast_prediction(self, issue: str, pred: str, step: int, conf: float, top_engine: str) -> None:
+        emoji = get_color_emoji(pred)
         msg = (
-            f"<b>[TRX PRO PREDICTOR V6]</b>\n"
-            f"⏰ Period: {issue}\n"
-            f"🎯 Prediction: {pred} {step}x\n"
+            f"<b>[COLOR-AI 10-CORE PRO]</b>\n"
+            f"⏰ Period: <code>{issue}</code>\n"
+            f"🎯 Prediction: {emoji} <b>{pred}</b> {step}x\n"
             f"📊 Confidence: {conf}%\n"
-            f"🧠 Top Core: {top_model.upper()}"
+            f"🧠 Top Engine: <code>{top_engine.upper()}</code>"
         )
         try: await self.bot.send_message(chat_id=Config.CHANNEL_ID, text=msg)
-        except Exception as e: logger.error(f"TG Send Error: {e}")
+        except: pass
 
-    async def send_result(self, issue: str, pred: str, step: int, is_win: bool, actual_size: str, actual_num: int):
+    async def broadcast_result(self, issue: str, pred: str, step: int, is_win: bool, actual_color: str, actual_num: int) -> None:
         win_str = "WIN" if is_win else "LOSE"
-        icon = "🟢" if is_win else "🔴"
-        res_letter = "B" if actual_size == "BIG" else "S"
+        res_emoji = get_color_emoji(actual_color)
         
         msg = (
-            f"<b>SIX-LOTTERY (TRX)</b>\n\n"
-            f"⏰ Period: {issue}\n"
-            f"🎯 Choice: {pred} {step}x\n"
-            f"📊 Result: {icon} {win_str} | {res_letter} ({actual_num})"
+            f"<b>🏆 SIX-LOTTERY RESULTS</b>\n\n"
+            f"⏰ Period: <code>{issue}</code>\n"
+            f"🎯 Choice: {get_color_emoji(pred)} {pred} {step}x\n"
+            f"📊 Result: {res_emoji} <b>{win_str}</b> | ({actual_num})"
         )
-        
-        try: 
-            await self.bot.send_message(chat_id=Config.CHANNEL_ID, text=msg)
-            
-            if is_win and Config.WIN_STICKER:
-                await self.bot.send_sticker(chat_id=Config.CHANNEL_ID, sticker=Config.WIN_STICKER)
-            elif not is_win and Config.LOSE_STICKER:
-                await self.bot.send_sticker(chat_id=Config.CHANNEL_ID, sticker=Config.LOSE_STICKER)
-        except Exception as e: logger.error(f"TG Result Error: {e}")
+        try: await self.bot.send_message(chat_id=Config.CHANNEL_ID, text=msg)
+        except: pass
 
-# ==========================================
-# 🚀 MODULE 7: MAIN CONTROLLER LOOP
-# ==========================================
-class GameController:
+# =========================================================================
+# 🚀 MODULE 7: THE MAIN CONTROLLER LOOP
+# =========================================================================
+class ApplicationController:
     def __init__(self):
         self.db = DatabaseManager(Config.MONGO_URI)
-        self.ai = UltimateAIEngine()
-        self.ui = TelegramUI(bot)
-        self.last_issue = None
-        self.lose_streak = 0
+        self.ai = UltraMasterEngine()
+        self.ui = UIManager(bot)
+        self.last_issue: Optional[str] = None
+        self.lose_streak: int = 0
 
-    async def fetch_lottery_data(self, session: aiohttp.ClientSession) -> dict:
-        # 💡 [TRX] အစ်ကိုပေးထားသော Json Data အတိအကျကို ပြန်ထည့်ထားပါသည် (Timestamp အသေပါ)
+    async def fetch_api_data(self, session: aiohttp.ClientSession) -> Optional[Dict[str, Any]]:
         json_data = {
-            'pageSize': 10, 
-            'pageNo': 1, 
-            'typeId': 13, 
-            'language': 7, 
-            'random': '55d1a12cb3614b2a85f752911e862395', 
-            'signature': '06141DE8D6175D772EDBF6420F0ECE99', 
-            'timestamp': 1773629418,
+            'pageSize': 10, 'pageNo': 1, 'typeId': 30, 'language': 7, 
+            'random': '029ef9cb888540c4b19e0c4b5eb49cbf', 
+            'signature': 'C526273C4CCB81BBD1A1227C3DC5D025', 
+            'timestamp': int(time.time())
         }
-        for _ in range(3):
+        for attempt in range(3):
             try:
-                async with session.post(Config.API_URL, headers=Config.HEADERS, json=json_data, timeout=5.0) as r:
-                    if r.status == 200: 
-                        res = await r.json()
-                        if res.get('code') != 0:
-                            logger.error(f"⚠️ API Error (Code != 0): {res}")
-                        return res
-                    else:
-                        logger.error(f"⚠️ HTTP Error: {r.status}")
-            except Exception as e: 
-                logger.error(f"⚠️ Request Exception: {e}")
-                await asyncio.sleep(0.5)
+                async with session.post(Config.API_URL, headers=Config.get_headers(), json=json_data, timeout=5.0) as r:
+                    if r.status == 200: return await r.json()
+            except: await asyncio.sleep(0.5)
         return None
-        
-    async def run(self):
+
+    # 💡 [NEW] Smart Win Check Logic (အရောင်တူရင်ဖြစ်ဖြစ်၊ Half-Win ဖြစ်ဖြစ် နိုင်တယ်လို့ မှတ်ယူမည်)
+    def check_win(self, predicted: str, actual: str) -> bool:
+        if predicted == actual: return True
+        if predicted == 'RED' and actual == 'RED_VIOLET': return True
+        if predicted == 'GREEN' and actual == 'GREEN_VIOLET': return True
+        return False
+
+    async def run_forever(self) -> None:
         await self.db.initialize()
         
         async with aiohttp.ClientSession() as session:
-            logger.info("🔥 TRX PRO Game Loop Started...")
+            logger.info("🔥 COLOR-AI V2 GAME LOOP STARTED 🔥")
             while True:
                 try:
-                    data = await self.fetch_lottery_data(session)
+                    data = await self.fetch_api_data(session)
                     if not data or data.get('code') != 0:
-                        await asyncio.sleep(1.0); continue
+                        await asyncio.sleep(1.5); continue
                         
                     records = data.get("data", {}).get("list", [])
                     if not records: continue
                     
                     latest = records[0]
-                    issue, number = str(latest["issueNumber"]), int(latest["number"])
-                    size = "BIG" if number >= 5 else "SMALL"
-                    parity = "EVEN" if number % 2 == 0 else "ODD"
+                    issue = str(latest["issueNumber"])
+                    number = int(latest["number"])
+                    color = get_color_from_number(number)
                     
                     if not self.last_issue:
                         self.last_issue = issue
-                        recent_preds = await self.db.get_recent_predictions(10)
+                        recent_preds = await self.db.get_recent_predictions(15)
                         
                         self.lose_streak = 0
                         for p in recent_preds:
@@ -379,30 +422,29 @@ class GameController:
 
                         next_issue = str(int(issue) + 1)
                         docs = await self.db.get_history(500)
-                        pred, conf, details = self.ai.analyze_and_predict(docs)
                         
-                        top_model = max(self.ai.optimizer.weights, key=self.ai.optimizer.weights.get)
-                        current_step = self.lose_streak + 1
+                        pred, conf, details = self.ai.analyze(docs)
+                        top_model = max(self.ai.opt.weights, key=self.ai.opt.weights.get) if self.ai.opt.weights else "rf"
                         
-                        await self.ui.send_prediction(next_issue, pred, current_step, conf, top_model)
+                        await self.ui.broadcast_prediction(next_issue, pred, self.lose_streak + 1, conf, top_model)
                         await asyncio.sleep(1.0); continue
 
                     if int(issue) > int(self.last_issue):
-                        await self.db.save_history(issue, number, size, parity)
-                        
-                        self.ai.optimizer.learn_from_result(size, self.ai.last_model_probs)
+                        await self.db.save_history(issue, number, color)
+                        self.ai.opt.update(color, self.ai.last_probs)
                         
                         pred_doc = await self.db.predictions.find_one({"issue_number": issue})
-                        
-                        if pred_doc and pred_doc.get('predicted_size'):
-                            predicted_size = pred_doc['predicted_size']
-                            is_win = (predicted_size == size)
+                        if pred_doc and pred_doc.get('predicted_color'):
+                            predicted_color = str(pred_doc['predicted_color'])
+                            
+                            # 💡 Apply Smart Win Check Logic here
+                            is_win = self.check_win(predicted_color, color)
                             win_lose_db = "WIN" if is_win else "LOSE"
                             
-                            await self.db.update_result(issue, size, number, win_lose_db)
+                            await self.db.update_result(issue, color, number, win_lose_db)
                             
                             current_step = self.lose_streak + 1
-                            await self.ui.send_result(issue, predicted_size, current_step, is_win, size, number)
+                            await self.ui.broadcast_result(issue, predicted_color, current_step, is_win, color, number)
                             
                             if is_win: self.lose_streak = 0
                             else: 
@@ -414,31 +456,24 @@ class GameController:
                         next_issue = str(int(issue) + 1)
                         docs = await self.db.get_history(500)
                         
-                        pred, conf, details = self.ai.analyze_and_predict(docs)
+                        pred, conf, details = self.ai.analyze(docs)
                         await self.db.save_prediction(next_issue, pred, conf, details)
                         
-                        top_model = max(self.ai.optimizer.weights, key=self.ai.optimizer.weights.get)
+                        top_model = max(self.ai.opt.weights, key=self.ai.opt.weights.get)
                         current_step = self.lose_streak + 1
                         
-                        await self.ui.send_prediction(next_issue, pred, current_step, conf, top_model)
+                        await self.ui.broadcast_prediction(next_issue, pred, current_step, conf, top_model)
 
                 except Exception as e:
-                    logger.error(f"Loop Exception: {e}")
+                    logger.error(f"Critical Loop Exception: {e}")
+                
                 await asyncio.sleep(1.5)
 
-# ==========================================
-# 🚀 ENTRY POINT
-# ==========================================
-async def main():
-    logger.info("Initializing 6-CORE TRX PROFESSIONAL PREDICTOR...")
+async def main() -> None:
     await bot.delete_webhook(drop_pending_updates=True)
-    
-    controller = GameController()
-    asyncio.create_task(controller.run())
-    
-    logger.info("Bot Polling Started...")
+    asyncio.create_task(ApplicationController().run_forever())
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
     try: asyncio.run(main())
-    except KeyboardInterrupt: logger.info("Bot Stopped by User.")
+    except KeyboardInterrupt: pass
