@@ -329,9 +329,9 @@ class GameController:
             'pageNo': 1, 
             'typeId': 13, 
             'language': 7, 
-            'random': '34e141e8512d411094dc208899ed0928', 
-            'signature': '079FBAB8B7561999EF7C01920E15A126', 
-            'timestamp': 1773625960
+            'random': '55d1a12cb3614b2a85f752911e862395', 
+            'signature': '06141DE8D6175D772EDBF6420F0ECE99', 
+            'timestamp': 1773629418,
         }
         for _ in range(3):
             try:
