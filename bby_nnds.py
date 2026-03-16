@@ -421,7 +421,7 @@ class EnterpriseController:
                         'language': 7, 
                         'random': 'c67645ba506f4653a98639179e216677', 
                         'signature': 'CEB3DF3A115BDC3551A20AC8842A6A85', 
-                        'timestamp': 1773677515, # 👈 အရင်လို int(time.time()) မသုံးဘဲ အသေထားလိုက်ပါ
+                        'timestamp': int(time.time()) # 👈 အရင်လို int(time.time()) မသုံးဘဲ အသေထားလိုက်ပါ
                     }
                     async with session.post(Config.API_URL, headers=Config.get_headers(), json=payload) as r:
                         if r.status == 200:
