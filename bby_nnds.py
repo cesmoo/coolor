@@ -413,7 +413,16 @@ class EnterpriseController:
             
             while True:
                 try:
-                    payload = {'pageSize': 5, 'pageNo': 1, 'typeId': 30, 'language': 7, 'random': 'c67645ba506f4653a98639179e216677', 'signature': 'CEB3DF3A115BDC3551A20AC8842A6A85', 'timestamp': int(time.time())}
+                    # ⚠️ သတိပြုရန်: random, signature နှင့် timestamp တို့ကို Browser မှ တစ်တွဲတည်း ကူးယူထည့်ပါ
+                    payload = {
+                        'pageSize': 5, 
+                        'pageNo': 1, 
+                        'typeId': 30, 
+                        'language': 7, 
+                        'random': 'c67645ba506f4653a98639179e216677', 
+                        'signature': 'CEB3DF3A115BDC3551A20AC8842A6A85', 
+                        'timestamp': 1773677515, # 👈 အရင်လို int(time.time()) မသုံးဘဲ အသေထားလိုက်ပါ
+                    }
                     async with session.post(Config.API_URL, headers=Config.get_headers(), json=payload) as r:
                         if r.status == 200:
                             data = await r.json()
@@ -431,7 +440,11 @@ class EnterpriseController:
                                     await self.task_queue.put(record)
                                     self.last_issue = issue
                                     backoff = 1.0
-                        else: raise Exception(f"HTTP {r.status}")
+                            else:
+                                # ✅ API က ငြင်းရင် ဘာကြောင့်ငြင်းလဲဆိုတာကို Terminal မှာ အနီရောင်ဖြင့် ပြပေးပါမည်
+                                logger.error(f"API Rejected. Error Info: {data}") 
+                        else: 
+                            raise Exception(f"HTTP {r.status}")
                 except Exception as e:
                     logger.warning(f"⚠️ API Fetch Failed: {e}. Retrying in {backoff}s")
                     await asyncio.sleep(backoff)
